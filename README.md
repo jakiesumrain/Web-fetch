@@ -1,21 +1,34 @@
 # web-fetch
 
-Fetch content from any web page using a progressive fallback chain. Call from your skill's SKILL.md or directly via scripts.
+An agentic skill for fetching web page content. Designed to be invoked by AI agents (Claude Code, OpenClaw, Hermes Agent, OpenCode) when they need to retrieve content from a URL.
 
-## Usage
+## Invocation
 
-```bash
-./scripts/fetch.sh "https://example.com"
+Agents should call this skill when the user asks to fetch, scrape, or read content from a web page. The skill auto-selects the best method via a progressive fallback chain:
+
+1. **curl** — static HTML (fastest, no JS)
+2. **playwright-cli** — JS-rendered pages (SPAs, dynamic sites)
+3. **browser tools** — interactive (cookie walls, login flows, lazy loading)
+4. **mmx vision** — screenshot analysis (images, PDFs — last resort)
+
+Escalation triggers: HTTP errors (429/403/5xx), empty content, app shell detection, tool failure.
+
+## SKILL.md Registration
+
+Register in an agent's SKILL.md:
+
+```yaml
+---
+name: web-fetch
+description: Fetch web page content using a progressive fallback chain — curl (fast, no JS) → playwright-cli (JS-rendered) → browser tools (interactive) → mmx vision (image analysis). No paid API keys needed.
+tags: [web, fetch, scrape, curl, playwright, mmx, browser-automation]
+---
+
+When the user asks to fetch a URL or scrape web content, use:
+`./scripts/fetch.sh "https://example.com"`
+
+See `SKILL.md` for full details.
 ```
-
-Always use `fetch.sh` — it handles the full fallback chain:
-
-1. **curl** — static HTML, fast. Good for APIs, markdown, docs.
-2. **playwright-cli** — JS-rendered. Good for SPAs, dynamic sites.
-3. **browser tools** — interactive. Good for cookie walls, login flows, lazy-loading.
-4. **mmx vision** — VLM screenshot analysis. Last resort for images, PDFs.
-
-Escalation happens automatically on: HTTP errors (429/403/5xx), empty/short content, app shell detection (bare `<div id="root">`), or tool failure.
 
 ## Output
 
@@ -31,10 +44,3 @@ Escalation happens automatically on: HTTP errors (429/403/5xx), empty/short cont
 ```
 
 On error: `{"error": "message", "url": "https://..."}`
-
-## Individual Tiers
-
-- `./scripts/fetch-curl.sh <url>` — curl only
-- `./scripts/fetch-playwright.sh <url>` — playwright only
-- `./scripts/fetch-browser.sh <url>` — interactive browser with auto-dismiss, cookie consent handling, scrolling, console error collection
-- `./scripts/fetch-mmx.sh <url>` — mmx vision screenshot analysis
